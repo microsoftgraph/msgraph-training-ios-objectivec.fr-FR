@@ -5,7 +5,7 @@ Dans cet exercice, vous allez étendre l’application de l’exercice précéde
 1. Créez un nouveau fichier de **liste de propriétés** dans le projet **GraphTutorial** nommé **AuthSettings. plist**.
 1. Ajoutez les éléments suivants au fichier dans le dictionnaire **racine** .
 
-    | Key | Type | Valeur |
+    | Clé | Type | Valeur |
     |-----|------|-------|
     | `AppId` | String | ID de l’application à partir du portail Azure |
     | `GraphScopes` | Tableau | Deux valeurs de chaîne `User.Read` : et`Calendars.Read` |
@@ -20,6 +20,11 @@ Dans cet exercice, vous allez étendre l’application de l’exercice précéde
 Dans cette section, vous allez configurer le projet pour MSAL, créer une classe de gestionnaire d’authentification, puis mettre à jour l’application pour se connecter et se déconnecter.
 
 ### <a name="configure-project-for-msal"></a>Configurer Project pour MSAL
+
+1. Ajoutez un nouveau groupe de trousseau aux fonctionnalités de votre projet.
+    1. Sélectionnez le projet **GraphTutorial** , puis **signez les fonctionnalités de &**.
+    1. Sélectionnez **+ capacité**, puis double-cliquez sur **partage de trousseau**.
+    1. Ajoutez un groupe de trousseau avec la valeur `com.microsoft.adalcache`.
 
 1. Contrôle cliquez sur **info. plist** , sélectionnez **ouvrir en tant que**, puis **code source**.
 1. Ajoutez les éléments suivants à `<dict>` l’intérieur de l’élément.
@@ -67,17 +72,19 @@ Dans cette section, vous allez configurer le projet pour MSAL, créer une classe
     ```objc
     #import <Foundation/Foundation.h>
     #import <MSAL/MSAL.h>
+    #import <MSGraphClientSDK/MSGraphClientSDK.h>
 
     NS_ASSUME_NONNULL_BEGIN
 
     typedef void (^GetTokenCompletionBlock)(NSString* _Nullable accessToken, NSError* _Nullable error);
 
-    @interface AuthenticationManager : NSObject
+    @interface AuthenticationManager : NSObject<MSAuthenticationProvider>
 
     + (id) instance;
-    - (void) getTokenInteractivelyWithCompletionBlock: (GetTokenCompletionBlock)completionBlock;
+    - (void) getTokenInteractivelyWithParentView: (UIViewController*) parentView andCompletionBlock: (GetTokenCompletionBlock)completionBlock;
     - (void) getTokenSilentlyWithCompletionBlock: (GetTokenCompletionBlock)completionBlock;
     - (void) signOut;
+    - (void) getAccessTokenForProviderOptions:(id<MSAuthenticationProviderOptions>)authProviderOptions andCompletion:(void (^)(NSString *, NSError *))completion;
 
     @end
 
@@ -114,25 +121,30 @@ Dans cette section, vous allez configurer le projet pour MSAL, créer une classe
             // Get app ID and scopes from AuthSettings.plist
             NSString* authConfigPath =
             [NSBundle.mainBundle pathForResource:@"AuthSettings" ofType:@"plist"];
-            NSString* bundleId = NSBundle.mainBundle.bundleIdentifier;
             NSDictionary* authConfig = [NSDictionary dictionaryWithContentsOfFile:authConfigPath];
 
             self.appId = authConfig[@"AppId"];
             self.graphScopes = authConfig[@"GraphScopes"];
 
             // Create the MSAL client
-            self.publicClient = [[MSALPublicClientApplication alloc] initWithClientId:self.appId
-                                                                        keychainGroup:bundleId
-                                                                                error:nil];
+            self.publicClient = [[MSALPublicClientApplication alloc] initWithClientId:self.appId error:nil];
         }
 
         return self;
     }
 
-    - (void) getTokenInteractivelyWithCompletionBlock:(GetTokenCompletionBlock)completionBlock {
+    - (void) getAccessTokenForProviderOptions:(id<MSAuthenticationProviderOptions>)authProviderOptions andCompletion:(void (^)(NSString * _Nonnull, NSError * _Nonnull))completion {
+        [self getTokenSilentlyWithCompletionBlock:completion];
+    }
+
+    - (void) getTokenInteractivelyWithParentView:(UIViewController *)parentView andCompletionBlock:(GetTokenCompletionBlock)completionBlock {
+        MSALWebviewParameters* webParameters = [[MSALWebviewParameters alloc] initWithParentViewController:parentView];
+        MSALInteractiveTokenParameters* interactiveParameters =
+        [[MSALInteractiveTokenParameters alloc]initWithScopes:self.graphScopes webviewParameters:webParameters];
+
         // Call acquireToken to open a browser so the user can sign in
         [self.publicClient
-         acquireTokenForScopes:self.graphScopes
+         acquireTokenWithParameters:interactiveParameters
          completionBlock:^(MSALResult * _Nullable result, NSError * _Nullable error) {
 
             // Check error
@@ -166,9 +178,12 @@ Dans cette section, vous allez configurer le projet pour MSAL, créer une classe
             return;
         }
 
+        MSALSilentTokenParameters* silentParameters = [[MSALSilentTokenParameters alloc] initWithScopes:self.graphScopes
+                                                                                                account:account];
+
         // Attempt to get token silently
         [self.publicClient
-         acquireTokenSilentForScopes:self.graphScopes account:account
+         acquireTokenSilentWithParameters:silentParameters
          completionBlock:^(MSALResult * _Nullable result, NSError * _Nullable error) {
              // Check error
              if (error) {
@@ -251,7 +266,8 @@ Dans cette section, vous allez configurer le projet pour MSAL, créer une classe
         [self.spinner startWithContainer:self];
 
         [AuthenticationManager.instance
-         getTokenInteractivelyWithCompletionBlock:^(NSString * _Nullable accessToken, NSError * _Nullable error) {
+         getTokenInteractivelyWithParentView:self
+         andCompletionBlock:^(NSString * _Nullable accessToken, NSError * _Nullable error) {
              dispatch_async(dispatch_get_main_queue(), ^{
                  [self.spinner stop];
 
@@ -299,29 +315,6 @@ Si vous vous connectez à l’application, vous devriez voir un jeton d’accès
 ## <a name="get-user-details"></a>Obtenir les détails de l’utilisateur
 
 Dans cette section, vous allez créer une classe d’assistance pour contenir tous les appels à Microsoft Graph et mettre à `WelcomeViewController` jour le pour utiliser cette nouvelle classe afin d’obtenir l’utilisateur connecté.
-
-1. Ouvrez **AuthenticationManager. h** et ajoutez l’instruction `#import` suivante en haut du fichier.
-
-    ```objc
-    #import <MSGraphMSALAuthProvider/MSGraphMSALAuthProvider.h>
-    ```
-
-1. Ajoutez la ligne suivante à l' `@interface` intérieur de la déclaration.
-
-    ```objc
-    - (MSALAuthenticationProvider*) getGraphAuthProvider;
-    ```
-
-1. Ouvrez **AuthenticationManager. m** et ajoutez la fonction suivante à la `AuthenticationManager` classe.
-
-    ```objc
-    - (MSALAuthenticationProvider*) getGraphAuthProvider {
-        // Create an MSAL auth provider for use with the Graph client
-        return [[MSALAuthenticationProvider alloc]
-                initWithPublicClientApplication:self.publicClient
-                andScopes:self.graphScopes];
-    }
-    ```
 
 1. Créez une **classe Touch de cacao** dans le projet **GraphTutorial** nommé **GraphManager**. Choisissez **NSObject** dans la sous- **classe du** champ.
 1. Ouvrez **GraphManager. h** et remplacez son contenu par le code suivant.
@@ -371,13 +364,9 @@ Dans cette section, vous allez créer une classe d’assistance pour contenir to
 
     - (id) init {
         if (self = [super init]) {
-
-            MSALAuthenticationProvider* authProvider =
-            [AuthenticationManager.instance getGraphAuthProvider];
-
             // Create the Graph client
             self.graphClient = [MSClientFactory
-                                createHTTPClientWithAuthenticationProvider:authProvider];
+                                createHTTPClientWithAuthenticationProvider:AuthenticationManager.instance];
         }
 
         return self;
