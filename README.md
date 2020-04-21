@@ -8,11 +8,11 @@ Dans cet atelier, vous allez créer une application iOS écrite dans objective-C
 
 - [un didacticiel de Microsoft Graph pour iOS objective-C](https://docs.microsoft.com/graph/tutorials/ios-objectivec)
 
-## <a name="demos"></a>Démonstrations
+## <a name="completed-sample"></a>Exemple terminé
 
-- [01-create-app](demos/01-create-app): terminé [créer une application iOS de l’objectif-C](https://docs.microsoft.com/graph/tutorials/ios-objectivec?tutorial-step=1)
-- [02-Add-AAD-auth](demos/02-add-aad-auth): terminé [Ajouter l’authentification Azure ad](https://docs.microsoft.com/graph/tutorials/ios-objectivec?tutorial-step=3)
-- [03-Add-MSGraph](demos/03-add-msgraph): terminé [obtenir les données de calendrier](https://docs.microsoft.com/graph/tutorials/ios-objectivec?tutorial-step=4)
+Si vous souhaitez simplement obtenir l’exemple complet généré en suivant cet atelier, vous pouvez le trouver ici.
+
+- [Projet terminé](demo)
 
 ## <a name="watch-the-module"></a>Regarder le module
 
@@ -29,8 +29,9 @@ Ce module a été enregistré et est disponible dans le canal YouTube de dévelo
 
 | Version |        Date        |                                                               Comments                                                               |
 | ------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.9     | 7 avril 2020      | Didacticiel actualisé avec Xcode, MSAL, etc.                                                                                     |
 | 1.8     | 23 août 2019    | Formation révisée pour l’intégration à docs.microsoft.com                                                                                |
-| 1.7     | 18 juin 2019      | Fichier Lisez-moi mis à jour pour l’enregistrement de captures numériques                                                                                     |
+| 1.7     | 18 juin 2019      | Fichier Lisez-moi mis à jour pour l’enregistrement de captures numériques                                                                                     |
 | 1.6     | 12 mai 2019       | actualisation du contenu 2019Q4                                                                                                               |
 | 1,5     | 12 février 2019  | actualisation du contenu 2019Q3                                                                                                               |
 | 1.4     | 7 novembre 2018   | actualisation du contenu 2019Q2 ; Remplacement du processus pour utiliser Cocoapods au lieu de Carthage pour y inclure le kit de développement logiciel iOS MSAL ; mise à jour de l’atelier pour XCode 10,1 |

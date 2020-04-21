@@ -2,7 +2,7 @@
 
 Dans cet exercice, vous allez incorporer Microsoft Graph dans l’application. Pour cette application, vous allez utiliser le [Kit de développement logiciel (SDK) Microsoft Graph pour effectuer des](https://github.com/microsoftgraph/msgraph-sdk-objc) appels à Microsoft Graph.
 
-## <a name="get-calendar-events-from-outlook"></a>Obtenir des événements de calendrier à partir d’Outlook
+## <a name="get-calendar-events-from-outlook"></a>Récupérer les événements de calendrier à partir d’Outlook
 
 Dans cette section, vous allez étendre `GraphManager` la classe pour ajouter une fonction afin d’obtenir les événements de l' `CalendarViewController` utilisateur et la mise à jour pour utiliser ces nouvelles fonctions.
 
@@ -115,7 +115,7 @@ Dans cette section, vous allez étendre `GraphManager` la classe pour ajouter un
     @end
     ```
 
-Vous pouvez maintenant exécuter l’application, se connecter et appuyer sur l’élément de navigation **calendrier** dans le menu. Vous devriez voir un dump JSON des événements dans l’application.
+1. Exécutez l’application, connectez-vous, puis appuyez sur l’élément de navigation **calendrier** dans le menu. Vous devriez voir un dump JSON des événements dans l’application.
 
 ## <a name="display-the-results"></a>Afficher les résultats
 
@@ -131,96 +131,18 @@ Vous pouvez maintenant exécuter l’application, se connecter et appuyer sur l�
 
 1. Ouvrez **GraphManager. m**. Remplacez la `completionBlock(data, nil);` ligne dans la `getEventsWithCompletionBlock` fonction par le code suivant.
 
-    ```objc
-    NSError* graphError;
-
-    // Deserialize to an events collection
-    MSCollection* eventsCollection = [[MSCollection alloc] initWithData:data error:&graphError];
-    if (graphError) {
-        completionBlock(nil, graphError);
-        return;
-    }
-
-    // Create an array to return
-    NSMutableArray* eventsArray = [[NSMutableArray alloc]
-                                initWithCapacity:eventsCollection.value.count];
-
-    for (id event in eventsCollection.value) {
-        // Deserialize the event and add to the array
-        MSGraphEvent* graphEvent = [[MSGraphEvent alloc] initWithDictionary:event];
-        [eventsArray addObject:graphEvent];
-    }
-
-    completionBlock(eventsArray, nil);
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/GraphManager.m" id="GetEventsSnippet" highlight="24-43":::
 
 ### <a name="update-calendarviewcontroller"></a>Mettre à jour CalendarViewController
 
 1. Créez un fichier de **classe Touch de cacao** dans le projet **GraphTutorial** nommé `CalendarTableViewCell`. Choisissez **UITableViewCell** dans la sous- **classe du** champ.
 1. Ouvrez **CalendarTableViewCell. h** et remplacez son contenu par le code suivant.
 
-    ```objc
-    #import <UIKit/UIKit.h>
-
-    NS_ASSUME_NONNULL_BEGIN
-
-    @interface CalendarTableViewCell : UITableViewCell
-
-    @property (nonatomic) NSString* subject;
-    @property (nonatomic) NSString* organizer;
-    @property (nonatomic) NSString* duration;
-
-    @end
-
-    NS_ASSUME_NONNULL_END
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/CalendarTableViewCell.h" id="CalendarTableCellSnippet":::
 
 1. Ouvrez **CalendarTableViewCell. m** et remplacez son contenu par le code suivant.
 
-    ```objc
-    #import "CalendarTableViewCell.h"
-
-    @interface CalendarTableViewCell()
-
-    @property (nonatomic) IBOutlet UILabel *subjectLabel;
-    @property (nonatomic) IBOutlet UILabel *organizerLabel;
-    @property (nonatomic) IBOutlet UILabel *durationLabel;
-
-    @end
-
-    @implementation CalendarTableViewCell
-
-    - (void)awakeFromNib {
-        [super awakeFromNib];
-        // Initialization code
-    }
-
-    - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
-        [super setSelected:selected animated:animated];
-
-        // Configure the view for the selected state
-    }
-
-    - (void) setSubject:(NSString *)subject {
-        _subject = subject;
-        self.subjectLabel.text = subject;
-        [self.subjectLabel sizeToFit];
-    }
-
-    - (void) setOrganizer:(NSString *)organizer {
-        _organizer = organizer;
-        self.organizerLabel.text = organizer;
-        [self.organizerLabel sizeToFit];
-    }
-
-    - (void) setDuration:(NSString *)duration {
-        _duration = duration;
-        self.durationLabel.text = duration;
-        [self.durationLabel sizeToFit];
-    }
-
-    @end
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/CalendarTableViewCell.m" id="CalendarTableCellSnippet":::
 
 1. Ouvrez **main. Storyboard** et localisez la **scène de calendrier**. Sélectionnez l' **affichage** dans la **scène de calendrier** et supprimez-le.
 
@@ -231,8 +153,25 @@ Vous pouvez maintenant exécuter l’application, se connecter et appuyer sur l�
 1. Utilisez la **bibliothèque** pour ajouter trois **étiquettes** à la cellule prototype.
 1. Sélectionnez la cellule prototype, puis l' **inspecteur d’identité**. Modifiez **Class** en **CalendarTableViewCell**.
 1. Sélectionnez l' **inspecteur d’attributs** et définissez **identificateur** sur `EventCell`.
-1. Dans le menu **éditeur** , sélectionnez **résoudre les problèmes de disposition automatique**, puis sélectionnez **Ajouter les contraintes manquantes** sous **toutes les vues dans le contrôleur d’affichage de bienvenue**.
 1. Une fois le **EventCell** sélectionné, sélectionnez l' **inspecteur** de connexions `durationLabel`et `organizerLabel`Connectez- `subjectLabel` vous, puis les étiquettes que vous avez ajoutées à la cellule sur la table de montage séquentiel.
+1. Définissez les propriétés et les contraintes sur les trois étiquettes comme suit.
+
+    - **Étiquette de l’objet**
+        - Ajouter une contrainte : espace de début à la marge de début de l’affichage du contenu, valeur : 0
+        - Ajouter une contrainte : espace de fin à la marge de fin de l’affichage du contenu, valeur : 0
+        - Ajouter une contrainte : espace à la marge supérieure de l’affichage du contenu, valeur : 0
+    - **Étiquette de l’organisateur**
+        - Police : système 12,0
+        - Ajouter une contrainte : espace de début à la marge de début de l’affichage du contenu, valeur : 0
+        - Ajouter une contrainte : espace de fin à la marge de fin de l’affichage du contenu, valeur : 0
+        - Ajouter une contrainte : espace vers le bas de l’étiquette d’objet, valeur : standard
+    - **Étiquette de durée**
+        - Police : système 12,0
+        - Couleur : gris foncé
+        - Ajouter une contrainte : espace de début à la marge de début de l’affichage du contenu, valeur : 0
+        - Ajouter une contrainte : espace de fin à la marge de fin de l’affichage du contenu, valeur : 0
+        - Ajouter une contrainte : espace vers le bas de l’étiquette de l’organisateur, valeur : standard
+        - Ajouter une contrainte : espace inférieur au contenu afficher la marge inférieure, valeur : 8
 
     ![Capture d’écran de la mise en page de cellule prototype](./images/prototype-cell-layout.png)
 
@@ -245,71 +184,7 @@ Vous pouvez maintenant exécuter l’application, se connecter et appuyer sur l�
 
 1. Ouvrez **CalendarViewController. m** et remplacez son contenu par le code suivant.
 
-    ```objc
-    #import "WelcomeViewController.h"
-    #import "SpinnerViewController.h"
-    #import "AuthenticationManager.h"
-    #import "GraphManager.h"
-    #import <MSGraphClientModels/MSGraphClientModels.h>
-
-    @interface WelcomeViewController ()
-
-    @property SpinnerViewController* spinner;
-
-    @end
-
-    @implementation WelcomeViewController
-
-    - (void)viewDidLoad {
-        [super viewDidLoad];
-        // Do any additional setup after loading the view.
-
-        self.spinner = [SpinnerViewController alloc];
-        [self.spinner startWithContainer:self];
-
-        self.userProfilePhoto.image = [UIImage imageNamed:@"DefaultUserPhoto"];
-
-        [GraphManager.instance
-         getMeWithCompletionBlock:^(MSGraphUser * _Nullable user, NSError * _Nullable error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self.spinner stop];
-
-                if (error) {
-                    // Show the error
-                    UIAlertController* alert = [UIAlertController
-                                                alertControllerWithTitle:@"Error getting user profile"
-                                                message:error.debugDescription
-                                                preferredStyle:UIAlertControllerStyleAlert];
-
-                    UIAlertAction* okButton = [UIAlertAction
-                                               actionWithTitle:@"OK"
-                                               style:UIAlertActionStyleDefault
-                                               handler:nil];
-
-                    [alert addAction:okButton];
-                    [self presentViewController:alert animated:true completion:nil];
-                    return;
-                }
-
-                // Set display name
-                self.userDisplayName.text = user.displayName ? : @"Mysterious Stranger";
-                [self.userDisplayName sizeToFit];
-
-                // AAD users have email in the mail attribute
-                // Personal accounts have email in the userPrincipalName attribute
-                self.userEmail.text = user.mail ? : user.userPrincipalName;
-                [self.userEmail sizeToFit];
-            });
-         }];
-    }
-
-    - (IBAction)signOut {
-        [AuthenticationManager.instance signOut];
-        [self performSegueWithIdentifier: @"userSignedOut" sender: nil];
-    }
-
-    @end
-    ```
+    :::code language="objc" source="../demo/GraphTutorial/GraphTutorial/CalendarViewController.m" id="CalendarViewSnippet":::
 
 1. Exécutez l’application, connectez-vous, puis appuyez sur l’onglet **calendrier** . La liste des événements doit s’afficher.
 
